@@ -23,10 +23,10 @@ func (u *Usage) write() {
 func (u *Usage) description() {
 	c := u.Command
 	if c.Description != "" {
-		u.add(c.Description)
+		u.add("%s", c.Description)
 		u.add("\n")
 	} else if c.Brief != "" {
-		u.add(c.Brief)
+		u.add("%s", c.Brief)
 		u.add("\n")
 	} else {
 		return
