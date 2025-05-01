@@ -57,20 +57,20 @@ func (u *Usage) options() {
 	}
 
 	u.add("  Options\n")
+	pad := "    "
 	for _, o := range *os {
 		ou := o.usage()
-		u.add("    %s", ou.long)
+		u.add("%s%s=<%s>\n", pad, ou.long, ou.kind)
 		if ou.short != "" {
-			u.add(", %s", ou.short)
+			u.add("%s %s<%s>\n", pad, ou.short, ou.kind)
 		}
-		u.add(" <%s>", ou.kind)
+		if ou.description != "" {
+			u.add("%s  %s\n", pad, ou.description)
+		}
 		if ou.dflt != "" {
-			u.add(" [default %s]", ou.dflt)
+			u.add("%s  Default: %s\n", pad, ou.dflt)
 		}
 		u.add("\n")
-		if ou.description != "" {
-			u.add("      %s\n", ou.description)
-		}
 	}
 }
 

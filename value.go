@@ -22,9 +22,13 @@ func newValue(binding any, flag bool) (*value, error) {
 
 	switch b := binding.(type) {
 	case *bool:
+		d := ""
+		if *b {
+			d = "true"
+		}
 		v := &value{
 			kind: "bool",
-			dflt: fmt.Sprintf("%t", *b),
+			dflt: d,
 			doInc: func() {
 				*b = true
 			},
@@ -45,9 +49,13 @@ func newValue(binding any, flag bool) (*value, error) {
 		return v, nil
 
 	case *float64:
+		d := ""
+		if *b != 0.0 {
+			d = fmt.Sprintf("%.1f", *b)
+		}
 		v := &value{
 			kind: "float",
-			dflt: fmt.Sprintf("%.1f", *b),
+			dflt: d,
 			doSet: func(s string) error {
 				return setValue(b, toFloat, s)
 			},
@@ -65,9 +73,13 @@ func newValue(binding any, flag bool) (*value, error) {
 		return v, nil
 
 	case *int:
+		d := ""
+		if *b != 0 {
+			d = fmt.Sprintf("%d", *b)
+		}
 		v := &value{
 			kind: "int",
-			dflt: fmt.Sprintf("%d", *b),
+			dflt: d,
 			doSet: func(s string) error {
 				return setValue(b, toInt, s)
 			},
@@ -90,15 +102,16 @@ func newValue(binding any, flag bool) (*value, error) {
 		return v, nil
 
 	case *string:
+		d := ""
+		if *b != "" {
+			d = fmt.Sprintf("%q", *b)
+		}
 		v := &value{
 			kind: "string",
-			dflt: *b,
+			dflt: d,
 			doSet: func(s string) error {
 				return setValue(b, toString, s)
 			},
-		}
-		if *b != "" {
-			v.dflt = fmt.Sprintf("\"%s\"", *b)
 		}
 		return v, nil
 

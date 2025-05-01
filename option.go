@@ -26,7 +26,7 @@ func (o *Option) begin() error {
 	}
 	value, err := newValue(o.Binding, o.Flag)
 	if err != nil {
-		return fmt.Errorf("--\"%s\" option error: %s", o.Name, err)
+		return fmt.Errorf("--\"%s\" option error: %w", o.Name, err)
 	}
 	o.value = value
 	return nil
