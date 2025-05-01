@@ -12,6 +12,7 @@ type Command struct {
 	Brief       string
 	Default     *Command
 	Description string
+	Init        func() error
 	Logging     bool
 	LogFile     string
 	LogLevel    string
@@ -74,6 +75,12 @@ func (c *Command) Usage() {
 }
 
 func (c *Command) run(args []string) {
+	if c.Init != nil {
+		if err := c.Init(); err != nil {
+			c.Fatal(1, "%s", err)
+		}
+	}
+
 	if c.Options == nil {
 		c.Options = []*Option{}
 	}
@@ -84,7 +91,7 @@ func (c *Command) run(args []string) {
 	if c.Logging {
 		c.Options = append(c.Options, &Option{
 			Binding:     &c.LogFile,
-			Description: "Set the logging outfile file",
+			Description: "Set the logging output file",
 			Name:        "log-file",
 		})
 		c.Options = append(c.Options, &Option{
@@ -101,7 +108,6 @@ func (c *Command) run(args []string) {
 		Name:        "help",
 		Short:       "h",
 	})
-
 	c.Options.Init()
 	c.Params.Init()
 
