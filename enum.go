@@ -43,7 +43,19 @@ func (e *_enum[T]) Bind(ptr *T) *_enum[T] {
 	return e
 }
 
-func (e _enum[T]) Param() {
+func (v *_enum[T]) Consume(args *[]string) error {
+	if len(*args) == 0 {
+		return fmt.Errorf("enum param requires a value")
+	}
+	if err := v.Assign((*args)[0]); err != nil {
+		return err
+	}
+	*args = (*args)[1:]
+	return nil
+}
+
+func (v *_enum[T]) NonZero() string {
+	return v.String()
 }
 
 func (e *_enum[T]) Reset() {
@@ -86,7 +98,18 @@ func (e *_enumSlice[T]) Bind(ptr *[]T) *_enumSlice[T] {
 	return e
 }
 
-func (e _enumSlice[T]) Param() {
+func (v *_enumSlice[T]) Consume(args *[]string) error {
+	for _, arg := range *args {
+		if err := v.Assign(arg); err != nil {
+			return err
+		}
+	}
+	*args = nil
+	return nil
+}
+
+func (v _enumSlice[T]) NonZero() string {
+	return v.String()
 }
 
 func (e *_enumSlice[T]) Reset() {

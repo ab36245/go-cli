@@ -15,6 +15,7 @@ type Option struct {
 
 type OptionBinding interface {
 	Assign(string) error
+	NonZero() string
 	Reset()
 	String() string
 	Type() string
@@ -28,5 +29,5 @@ func (o *Option) Init() {
 	if o.Name == "" {
 		panic(fmt.Errorf("option without a name"))
 	}
-	o.defaultValue = o.Binding.String()
+	o.defaultValue = o.Binding.NonZero()
 }

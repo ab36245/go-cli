@@ -35,7 +35,22 @@ func (v *_float) Bind(ptr *float64) *_float {
 	return v
 }
 
-func (v *_float) Param() {
+func (v *_float) Consume(args *[]string) error {
+	if len(*args) == 0 {
+		return fmt.Errorf("float param requires a value")
+	}
+	if err := v.Assign((*args)[0]); err != nil {
+		return err
+	}
+	*args = (*args)[1:]
+	return nil
+}
+
+func (v *_float) NonZero() string {
+	if *v.ptr == 0 {
+		return ""
+	}
+	return v.String()
 }
 
 func (v *_float) Reset() {
@@ -77,7 +92,21 @@ func (v *_floatSlice) Bind(ptr *[]float64) *_floatSlice {
 	return v
 }
 
-func (v *_floatSlice) Param() {
+func (v *_floatSlice) Consume(args *[]string) error {
+	for _, arg := range *args {
+		if err := v.Assign(arg); err != nil {
+			return err
+		}
+	}
+	*args = nil
+	return nil
+}
+
+func (v _floatSlice) NonZero() string {
+	if len(*v.ptr) == 0 {
+		return ""
+	}
+	return v.String()
 }
 
 func (v *_floatSlice) Reset() {

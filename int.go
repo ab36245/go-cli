@@ -39,6 +39,13 @@ func (v *_intBase) Bind(ptr *int) *_intBase {
 	return v
 }
 
+func (v *_intBase) NonZero() string {
+	if *v.ptr == 0 {
+		return ""
+	}
+	return v.String()
+}
+
 func (v *_intBase) Reset() {
 	*v.ptr = 0
 }
@@ -64,7 +71,15 @@ func (v *_int) Bind(ptr *int) *_int {
 	return v
 }
 
-func (v *_int) Param() {
+func (v *_int) Consume(args *[]string) error {
+	if len(*args) == 0 {
+		return fmt.Errorf("int param requires a value")
+	}
+	if err := v.Assign((*args)[0]); err != nil {
+		return err
+	}
+	*args = (*args)[1:]
+	return nil
 }
 
 type _intFlag struct {
@@ -103,11 +118,25 @@ func (v *_intSlice) Bind(ptr *[]int) *_intSlice {
 	return v
 }
 
-func (v *_intSlice) Reset() {
-	*v.ptr = nil
+func (v *_intSlice) Consume(args *[]string) error {
+	for _, arg := range *args {
+		if err := v.Assign(arg); err != nil {
+			return err
+		}
+	}
+	*args = nil
+	return nil
 }
 
-func (v *_intSlice) Param() {
+func (v _intSlice) NonZero() string {
+	if len(*v.ptr) == 0 {
+		return ""
+	}
+	return v.String()
+}
+
+func (v *_intSlice) Reset() {
+	*v.ptr = nil
 }
 
 func (v _intSlice) String() string {

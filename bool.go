@@ -39,6 +39,13 @@ func (v *_boolBase) Bind(ptr *bool) *_boolBase {
 	return v
 }
 
+func (v *_boolBase) NonZero() string {
+	if !*v.ptr {
+		return ""
+	}
+	return v.String()
+}
+
 func (v *_boolBase) Reset() {
 	*v.ptr = false
 }
@@ -64,7 +71,15 @@ func (v *_bool) Bind(ptr *bool) *_bool {
 	return v
 }
 
-func (v *_bool) Param() {
+func (v *_bool) Consume(args *[]string) error {
+	if len(*args) == 0 {
+		return fmt.Errorf("bool param requires a value")
+	}
+	if err := v.Assign((*args)[0]); err != nil {
+		return err
+	}
+	*args = (*args)[1:]
+	return nil
 }
 
 type _boolFlag struct {
@@ -103,7 +118,21 @@ func (v *_boolSlice) Bind(ptr *[]bool) *_boolSlice {
 	return v
 }
 
-func (v *_boolSlice) Param() {
+func (v *_boolSlice) Consume(args *[]string) error {
+	for _, arg := range *args {
+		if err := v.Assign(arg); err != nil {
+			return err
+		}
+	}
+	*args = nil
+	return nil
+}
+
+func (v _boolSlice) NonZero() string {
+	if len(*v.ptr) == 0 {
+		return ""
+	}
+	return v.String()
 }
 
 func (v *_boolSlice) Reset() {

@@ -35,7 +35,22 @@ func (v *_date) Bind(ptr *time.Time) *_date {
 	return v
 }
 
-func (v *_date) Param() {
+func (v *_date) Consume(args *[]string) error {
+	if len(*args) == 0 {
+		return fmt.Errorf("date param requires a value")
+	}
+	if err := v.Assign((*args)[0]); err != nil {
+		return err
+	}
+	*args = (*args)[1:]
+	return nil
+}
+
+func (v *_date) NonZero() string {
+	if v.ptr.IsZero() {
+		return ""
+	}
+	return v.String()
 }
 
 func (v *_date) Reset() {
@@ -77,7 +92,21 @@ func (v *_dateSlice) Bind(ptr *[]time.Time) *_dateSlice {
 	return v
 }
 
-func (v *_dateSlice) Param() {
+func (v *_dateSlice) Consume(args *[]string) error {
+	for _, arg := range *args {
+		if err := v.Assign(arg); err != nil {
+			return err
+		}
+	}
+	*args = nil
+	return nil
+}
+
+func (v _dateSlice) NonZero() string {
+	if len(*v.ptr) == 0 {
+		return ""
+	}
+	return v.String()
 }
 
 func (v *_dateSlice) Reset() {

@@ -29,7 +29,22 @@ func (v *_string) Bind(ptr *string) *_string {
 	return v
 }
 
-func (v *_string) Param() {
+func (v *_string) Consume(args *[]string) error {
+	if len(*args) == 0 {
+		return fmt.Errorf("string param requires a value")
+	}
+	if err := v.Assign((*args)[0]); err != nil {
+		return err
+	}
+	*args = (*args)[1:]
+	return nil
+}
+
+func (v *_string) NonZero() string {
+	if *v.ptr == "" {
+		return ""
+	}
+	return v.String()
 }
 
 func (v *_string) Reset() {
@@ -65,7 +80,21 @@ func (v *_stringSlice) Bind(ptr *[]string) *_stringSlice {
 	return v
 }
 
-func (v *_stringSlice) Param() {
+func (v *_stringSlice) Consume(args *[]string) error {
+	for _, arg := range *args {
+		if err := v.Assign(arg); err != nil {
+			return err
+		}
+	}
+	*args = nil
+	return nil
+}
+
+func (v _stringSlice) NonZero() string {
+	if len(*v.ptr) == 0 {
+		return ""
+	}
+	return v.String()
 }
 
 func (v *_stringSlice) Reset() {
