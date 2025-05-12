@@ -2,125 +2,95 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"strings"
+
+	"github.com/ab36245/go-writer"
 )
 
-type Usage struct {
-	Command *Command
-	Builder strings.Builder
+var UsageWriter = writer.New()
+
+func CommandUsage(c *Command) string {
+	CommandDescription(c)
+	CommandSummary(c)
+	OptionsUsage(c.Options)
+	return UsageWriter.String()
 }
 
-func (u *Usage) write() {
-	u.description()
-	u.header()
-	u.options()
-	u.params()
-	u.subcommands()
-	fmt.Fprintf(os.Stderr, "%s", u.Builder.String())
-}
-
-func (u *Usage) description() {
-	c := u.Command
+func CommandDescription(c *Command) {
+	w := UsageWriter
 	if c.Description != "" {
-		u.add("%s", c.Description)
-		u.add("\n")
+		w.End(c.Description)
 	} else if c.Brief != "" {
-		u.add("%s", c.Brief)
-		u.add("\n")
-	} else {
-		return
+		w.End(c.Brief)
 	}
-	u.add("\n")
 }
 
-func (u *Usage) header() {
-	c := u.Command
-	u.add("Usage: %s", c.FullName)
+func CommandSummary(c *Command) {
+	w := UsageWriter
+	w.Add("Usage: %s", c.FullName)
 	if len(c.Options) > 0 {
-		u.add(" [options]")
+		w.Add(" [options]")
 	}
 	if len(c.Params) > 0 {
 		for _, p := range c.Params {
-			u.add(" %s", p.Name)
+			w.Add(" %s", p.Name)
 		}
 	} else if len(c.Subcommands) > 0 {
-		u.add(" command [args...]")
+		w.Add(" command [args...]")
 	}
-	u.add("\n")
+	w.End("")
 }
 
-func (u *Usage) options() {
-	os := &u.Command.Options
-	if len(*os) == 0 {
+func OptionsUsage(os Options) {
+	if len(os) == 0 {
 		return
 	}
-
-	u.add("  Options\n")
-	pad := "    "
-	for _, o := range *os {
-		ou := o.usage()
-		u.add("%s%s=<%s>\n", pad, ou.long, ou.kind)
-		if ou.short != "" {
-			u.add("%s %s<%s>\n", pad, ou.short, ou.kind)
+	w := UsageWriter
+	w.Over("")
+	{
+		w.Over("Options")
+		{
+			for _, o := range os {
+				OptionUsage(o)
+			}
 		}
-		if ou.description != "" {
-			u.add("%s  %s\n", pad, ou.description)
-		}
-		if ou.dflt != "" {
-			u.add("%s  Default: %s\n", pad, ou.dflt)
-		}
-		u.add("\n")
+		w.Back("")
 	}
+	w.Back("")
 }
 
-func (u *Usage) params() {
-	ps := &u.Command.Params
-	if len(*ps) == 0 {
-		return
+func OptionUsage(o *Option) {
+	long := fmt.Sprintf("--%s", o.Name)
+	b := o.Binding
+	_, flag := b.(OptionFlag)
+	if flag {
+		long += "["
+	}
+	long += fmt.Sprintf("=<%s>", b.Type())
+	if flag {
+		long += "]"
 	}
 
-	u.add("  Params\n")
-	for _, p := range *ps {
-		pu := p.usage()
-		u.add("    %s", pu.name)
-		u.add(" <%s>", pu.kind)
-		if pu.dflt != "" {
-			u.add(" [default %s]", pu.dflt)
+	short := ""
+	if o.Short != "" {
+		short = fmt.Sprintf("-%s", o.Short)
+		if !flag {
+			short += fmt.Sprintf("<%s>", b.Type())
 		}
-		u.add("\n")
-		if pu.description != "" {
-			u.add("      %s\n", pu.description)
-		}
-	}
-}
-
-func (u *Usage) subcommands() {
-	cs := &u.Command.Subcommands
-	if len(*cs) == 0 {
-		return
 	}
 
-	u.add("  Sub-commands\n")
-	maxSize := 0
-	for _, c := range *cs {
-		size := len([]rune(c.Name))
-		if maxSize < size {
-			maxSize = size
+	w := UsageWriter
+	w.Add("%s", long)
+	if short != "" {
+		w.Add(", %s", short)
+	}
+	w.Over("")
+	{
+		if o.Description != "" {
+			w.End("%s", o.Description)
+		}
+		if o.defaultValue != "" {
+			w.End("Default: %s", o.defaultValue)
 		}
 	}
-	for _, c := range *cs {
-		u.add("    %-*s", maxSize, c.Name)
-		if c.Brief != "" {
-			u.add("  %s", c.Brief)
-		}
-		if u.Command.Default != nil && c.Name == u.Command.Default.Name {
-			u.add(" (default)")
-		}
-		u.add("\n")
-	}
-}
-
-func (u *Usage) add(mesg string, args ...any) {
-	u.Builder.WriteString(fmt.Sprintf(mesg, args...))
+	w.Back("")
 }

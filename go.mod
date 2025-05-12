@@ -1,7 +1,7 @@
 module github.com/ab36245/go-cli
 
-go 1.24.2
+go 1.24.3
 
-replace github.com/ab36245/go-errors => ../go-errors
+replace github.com/ab36245/go-writer => ../go-writer
 
-require github.com/ab36245/go-errors v0.0.0-20250428061939-8b056c3b905e
+require github.com/ab36245/go-writer v0.0.0-20250512051022-34d48556f4a4 // indirect

@@ -9,9 +9,7 @@ type Options []*Option
 
 func (o *Options) Init() {
 	for _, option := range *o {
-		if err := option.begin(); err != nil {
-			panic(err)
-		}
+		option.Init()
 	}
 }
 
@@ -39,21 +37,41 @@ func (o *Options) Parse(args *[]string) error {
 }
 
 func (o *Options) parseLong(arg string, args *[]string) error {
-	pos := strings.IndexRune(arg, '=')
-	var name string
-	if pos < 0 {
-		name = arg
-		arg = ""
-	} else {
+	name := arg
+	value := ""
+	reset := false
+	if strings.HasPrefix(arg, "no-") {
+		name = arg[3:]
+		reset = true
+	} else if pos := strings.IndexRune(arg, '='); pos >= 0 {
 		name = arg[:pos]
-		arg = arg[pos+1:]
+		value = arg[pos+1:]
 	}
-	for _, option := range *o {
-		if option.Name == name {
-			return option.long(arg, args)
+	for _, o := range *o {
+		if o.Name != name {
+			continue
 		}
+		b := o.Binding
+		var err error
+		if reset {
+			b.Reset()
+		} else if value != "" {
+			err = b.Assign(value)
+		} else if f, ok := b.(OptionFlag); ok {
+			f.Update()
+		} else if len(*args) > 0 {
+			value = (*args)[0]
+			*args = (*args)[1:]
+			err = b.Assign(value)
+		} else {
+			err = fmt.Errorf("requires a value")
+		}
+		if err != nil {
+			return fmt.Errorf("--%s: %w", name, err)
+		}
+		return nil
 	}
-	return fmt.Errorf("unknown option \"--%s\"", name)
+	return fmt.Errorf("--%s: unknown option", arg)
 }
 
 func (o *Options) parseShort(arg string, args *[]string) error {
@@ -61,21 +79,31 @@ func (o *Options) parseShort(arg string, args *[]string) error {
 		short := arg[0:1]
 		arg = arg[1:]
 
-		found := false
-		var err error
 		for _, option := range *o {
-			if option.Short == short {
-				found = true
-				err = option.short(&arg, args)
-				break
+			if option.Short != short {
+				continue
 			}
+			b := option.Binding
+			var err error
+			if f, ok := b.(OptionFlag); ok {
+				f.Update()
+			} else if arg != "" {
+				value := arg
+				arg = ""
+				err = b.Assign(value)
+			} else if len(*args) > 0 {
+				value := (*args)[0]
+				*args = (*args)[1:]
+				err = b.Assign(value)
+			} else {
+				err = fmt.Errorf("requires a value")
+			}
+			if err != nil {
+				return fmt.Errorf("-%s: %w", short, err)
+			}
+			return nil
 		}
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("unknown option \"-%s\"", short)
-		}
+		return fmt.Errorf("-%s: unknown option", short)
 	}
 	return nil
 }
