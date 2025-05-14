@@ -99,7 +99,7 @@ func (c *Command) run(args []string) {
 			"warn":  slog.LevelWarn,
 		}
 		c.Options = append(c.Options, &Option{
-			Binding:     String(&c.LogFile),
+			Binding:     String().Bind(&c.LogFile),
 			Description: "Set the logging output file",
 			Name:        "log-file",
 		})
@@ -112,7 +112,7 @@ func (c *Command) run(args []string) {
 
 	help := false
 	c.Options = append(c.Options, &Option{
-		Binding:     BoolFlag(&help),
+		Binding:     BoolFlag().Bind(&help),
 		Description: "Show this usage message",
 		Name:        "help",
 		Short:       "h",
