@@ -221,6 +221,6 @@ func String() *Value[string] {
 	return NewValue(stringHandler)
 }
 
-func StringSlice() *ValueSlice[time.Time] {
-	return NewValueSlice(dateHandler)
+func StringSlice() *ValueSlice[string] {
+	return NewValueSlice(stringHandler)
 }
