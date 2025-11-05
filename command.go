@@ -32,7 +32,7 @@ func (c Command) Error(mesg string, args ...any) {
 	if len(args) > 0 {
 		mesg = fmt.Sprintf(mesg, args...)
 	}
-	for _, line := range strings.Split(mesg, "\n") {
+	for line := range strings.SplitSeq(mesg, "\n") {
 		fmt.Fprintf(os.Stderr, "%s: %s\n", c.FullName, line)
 	}
 }
@@ -208,112 +208,4 @@ func (c *Command) runCommand(args []string) {
 
 func (c *Command) runRunner(args []string) {
 	c.OnRun(c, args)
-}
-
-func (c *Command) parseOptions(args *[]string) error {
-	for _, o := range c.Options {
-		o.defaultValue = o.Binding.String()
-	}
-	for len(*args) > 0 {
-		arg := (*args)[0]
-		if arg == "--" {
-			*args = (*args)[1:]
-			break
-		}
-		if strings.HasPrefix(arg, "--") {
-			*args = (*args)[1:]
-			if err := c.parseLongOption(arg[2:], args); err != nil {
-				return err
-			}
-		} else if strings.HasPrefix(arg, "-") {
-			*args = (*args)[1:]
-			if err := c.parseShortOptions(arg[1:], args); err != nil {
-				return err
-			}
-		} else {
-			break
-		}
-	}
-	return nil
-}
-
-func (c *Command) parseLongOption(arg string, args *[]string) error {
-	name := arg
-	value := ""
-	reset := false
-	if strings.HasPrefix(arg, "no-") {
-		name = arg[3:]
-		reset = true
-	} else {
-		parts := strings.SplitN(arg, "=", 2)
-		if len(parts) == 2 {
-			name = parts[0]
-			value = parts[1]
-		}
-	}
-
-	for _, o := range c.Options {
-		if o.Name != name {
-			continue
-		}
-		b := o.Binding
-		var err error
-		if reset {
-			b.Reset()
-		} else if value != "" {
-			err = b.Assign(value)
-		} else if f, ok := b.(OptionFlag); ok {
-			f.Update()
-		} else if len(*args) > 0 {
-			value = (*args)[0]
-			*args = (*args)[1:]
-			err = b.Assign(value)
-		} else {
-			err = fmt.Errorf("requires a value")
-		}
-		if err != nil {
-			return fmt.Errorf("--%s: %w", name, err)
-		}
-		return nil
-	}
-	return fmt.Errorf("--%s: unknown option", arg)
-}
-
-func (c *Command) parseShortOptions(arg string, args *[]string) error {
-	for arg != "" {
-		if err := c.parseShortOption(&arg, args); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Command) parseShortOption(arg *string, args *[]string) error {
-	short := string((*arg)[0])
-	*arg = (*arg)[1:]
-	for _, o := range c.Options {
-		if o.Short != short {
-			continue
-		}
-		b := o.Binding
-		var err error
-		if f, ok := b.(OptionFlag); ok {
-			f.Update()
-		} else if *arg != "" {
-			value := *arg
-			*arg = ""
-			err = b.Assign(value)
-		} else if len(*args) > 0 {
-			value := (*args)[0]
-			*args = (*args)[1:]
-			err = b.Assign(value)
-		} else {
-			err = fmt.Errorf("requires a value")
-		}
-		if err != nil {
-			return fmt.Errorf("-%s: %w", short, err)
-		}
-		return nil
-	}
-	return fmt.Errorf("-%s: unknown option", short)
 }
