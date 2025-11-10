@@ -1,5 +1,7 @@
 package cli
 
+import "fmt"
+
 type Params []*Param
 
 func (p *Params) Init() {
@@ -9,11 +11,12 @@ func (p *Params) Init() {
 }
 
 func (p *Params) Parse(args *[]string) error {
-	for _, param := range *p {
-		err := param.Binding.Consume(args)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	// for _, param := range *p {
+	// 	err := param.Binding.Consume(args, param.Min, param.Max)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	// return nil
+	return fmt.Errorf("unimplemented")
 }

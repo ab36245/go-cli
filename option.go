@@ -1,6 +1,10 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ab36245/go-bindings"
+)
 
 type Option struct {
 	Binding     OptionBinding
@@ -14,11 +18,7 @@ type Option struct {
 }
 
 type OptionBinding interface {
-	Assign(string) error
-	NonZero() string
-	Reset()
-	String() string
-	Type() string
+	bindings.Binding
 }
 
 type OptionFlag interface {
@@ -29,5 +29,7 @@ func (o *Option) Init() {
 	if o.Name == "" {
 		panic(fmt.Errorf("option without a name"))
 	}
-	o.defaultValue = o.Binding.NonZero()
+	if !o.Binding.IsZero() {
+		o.defaultValue = o.Binding.String()
+	}
 }

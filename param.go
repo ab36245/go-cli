@@ -1,19 +1,21 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ab36245/go-bindings"
+)
 
 type Param struct {
 	Binding     ParamBinding
 	Description string
+	Max         int
+	Min         int
 	Name        string
 }
 
 type ParamBinding interface {
-	Assign(string) error
-	Consume(*[]string) error
-	Reset()
-	String() string
-	Type() string
+	bindings.Binding
 }
 
 func (p *Param) Init() {
