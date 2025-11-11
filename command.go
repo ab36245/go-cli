@@ -91,20 +91,18 @@ func (c *Command) run(args []string) {
 	}
 
 	if c.Logging {
-		levels := map[string]slog.Level{
-			"debug": slog.LevelDebug,
-			"error": slog.LevelError,
-			"info":  slog.LevelInfo,
-			"none":  999,
-			"warn":  slog.LevelWarn,
-		}
 		c.Options = append(c.Options, &Option{
 			Binding:     String(&c.LogFile),
 			Description: "Set the logging output file",
 			Name:        "log-file",
 		})
 		c.Options = append(c.Options, &Option{
-			Binding:     Enum(levels, &c.LogLevel),
+			Binding: Enum(&c.LogLevel).
+				Map("debug", slog.LevelDebug).
+				Map("error", slog.LevelError).
+				Map("info", slog.LevelInfo).
+				Map("none", 999).
+				Map("warn", slog.LevelWarn),
 			Description: "Set the logging level",
 			Name:        "log-level",
 		})

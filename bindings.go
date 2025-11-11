@@ -15,10 +15,10 @@ var (
 	StringSlice = bindings.StringSlice
 )
 
-func Enum[T any](mapping map[string]T, binding *T) bindings.Binding {
-	return bindings.Enum(mapping, binding)
+func Enum[T comparable](binding *T) bindings.EnumBinding[T] {
+	return bindings.Enum(binding)
 }
 
-func EnumSlice[T any](mapping map[string]T, binding *[]T) bindings.Binding {
-	return bindings.EnumSlice(mapping, binding)
+func EnumSlice[T comparable](binding *[]T) bindings.EnumBinding[T] {
+	return bindings.EnumSlice(binding)
 }
