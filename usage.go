@@ -12,15 +12,16 @@ func CommandUsage(c *Command) string {
 	CommandDescription(c)
 	CommandSummary(c)
 	OptionsUsage(c.Options)
+	SubcommandsUsage(c.Subcommands)
 	return UsageWriter.String()
 }
 
 func CommandDescription(c *Command) {
 	w := UsageWriter
 	if c.Description != "" {
-		w.End(c.Description)
+		w.End("%s", c.Description)
 	} else if c.Brief != "" {
-		w.End(c.Brief)
+		w.End("%s", c.Brief)
 	}
 }
 
@@ -93,4 +94,37 @@ func OptionUsage(o *Option) {
 		}
 	}
 	w.Back("")
+}
+
+func SubcommandsUsage(cs []Command) {
+	if len(cs) == 0 {
+		return
+	}
+	w := UsageWriter
+	w.Over("")
+	{
+		w.Over("Sub-commands")
+		{
+			width := 0
+			for _, c := range cs {
+				if width < len(c.Name) {
+					width = len(c.Name)
+				}
+			}
+			for _, c := range cs {
+				SubcommandUsage(c, width)
+			}
+		}
+		w.Back("")
+	}
+	w.Back("")
+}
+
+func SubcommandUsage(c Command, width int) {
+	w := UsageWriter
+	brief := c.Brief
+	if brief == "" {
+		brief = c.Description
+	}
+	w.End("%-*s %s", width, c.Name, brief)
 }
