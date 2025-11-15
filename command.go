@@ -183,25 +183,47 @@ func (c *Command) runCommand(args []string) {
 	if len(c.Subcommands) == 0 {
 		c.Panic("no sub-commands registered")
 	}
-	var subcommand *Command
+	dispatch := func(sc *Command) {
+		sc.FullName = c.FullName + " " + sc.Name
+		sc.run(args)
+	}
+
 	if len(args) > 0 {
 		name := args[0]
 		args = args[1:]
+
+		// Look for exact match
 		for _, sc := range c.Subcommands {
 			if sc.Name == name {
-				subcommand = &sc
+				dispatch(&sc)
+				return
 			}
 		}
-		if subcommand == nil {
+
+		// Look for longest substring
+		commands := []*Command{}
+		for _, sc := range c.Subcommands {
+			if strings.HasPrefix(sc.Name, name) {
+				commands = append(commands, &sc)
+			}
+		}
+		if len(commands) < 1 {
 			c.Fatal(2, "unknown command \"%s\"", name)
+		} else if len(commands) > 1 {
+			c.Error("ambiguous command name \"%s\"", name)
+			c.Error("possible names are:")
+			for _, sc := range commands {
+				c.Error("- %s", sc.Name)
+			}
+			c.Fatal(2, "enter a longer name to disambiguate")
+		} else {
+			dispatch(commands[0])
 		}
 	} else if c.Default != nil {
-		subcommand = c.Default
+		dispatch(c.Default)
 	} else {
 		c.Usage()
 	}
-	subcommand.FullName = c.FullName + " " + subcommand.Name
-	subcommand.run(args)
 }
 
 func (c *Command) runRunner(args []string) {
