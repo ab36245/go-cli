@@ -2,19 +2,18 @@ package cli
 
 type Params []*Param
 
-func (p *Params) Init() {
-	for _, param := range *p {
+func (ps *Params) Init() {
+	for _, param := range *ps {
 		param.Init()
 	}
 }
 
-func (p *Params) Parse(args *[]string) error {
-	// TODO
-	// for _, param := range *p {
-	// 	err := param.Binding.Consume(args, param.Min, param.Max)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+func (ps *Params) Parse(args *[]string) error {
+	for _, p := range *ps {
+		err := p.Binding.Consume(args, p.Min, p.Max)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

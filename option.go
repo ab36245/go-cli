@@ -2,12 +2,10 @@ package cli
 
 import (
 	"fmt"
-
-	"github.com/ab36245/go-bindings"
 )
 
 type Option struct {
-	Binding     OptionBinding
+	Binding     Binding
 	Description string
 	Name        string
 	Short       string
@@ -15,14 +13,6 @@ type Option struct {
 	OnUsage func(option Option)
 
 	defaultValue string
-}
-
-type OptionBinding interface {
-	bindings.Binding
-}
-
-type OptionFlag interface {
-	Update()
 }
 
 func (o *Option) Init() {

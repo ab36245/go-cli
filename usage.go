@@ -6,18 +6,17 @@ import (
 	"github.com/ab36245/go-writer"
 )
 
-var UsageWriter = writer.New()
-
 func CommandUsage(c *Command) string {
-	CommandDescription(c)
-	CommandSummary(c)
-	OptionsUsage(c.Options)
-	SubcommandsUsage(c.Subcommands)
-	return UsageWriter.String()
+	w := writer.New()
+	CommandDescription(w, c)
+	CommandSummary(w, c)
+	OptionsUsage(w, c.Options)
+	ParamsUsage(w, c.Params)
+	SubcommandsUsage(w, c.Subcommands)
+	return w.String()
 }
 
-func CommandDescription(c *Command) {
-	w := UsageWriter
+func CommandDescription(w *writer.Writer, c *Command) {
 	if c.Description != "" {
 		w.End("%s", c.Description)
 	} else if c.Brief != "" {
@@ -25,15 +24,21 @@ func CommandDescription(c *Command) {
 	}
 }
 
-func CommandSummary(c *Command) {
-	w := UsageWriter
+func CommandSummary(w *writer.Writer, c *Command) {
 	w.Add("Usage: %s", c.FullName)
 	if len(c.Options) > 0 {
 		w.Add(" [options]")
 	}
 	if len(c.Params) > 0 {
 		for _, p := range c.Params {
-			w.Add(" %s", p.Name)
+			w.Add(" ")
+			if p.Min == 0 {
+				w.Add("[")
+			}
+			w.Add("%s", p.Name)
+			if p.Min == 0 {
+				w.Add("]")
+			}
 		}
 	} else if len(c.Subcommands) > 0 {
 		w.Add(" command [args...]")
@@ -41,17 +46,16 @@ func CommandSummary(c *Command) {
 	w.End("")
 }
 
-func OptionsUsage(os Options) {
+func OptionsUsage(w *writer.Writer, os Options) {
 	if len(os) == 0 {
 		return
 	}
-	w := UsageWriter
 	w.Over("")
 	{
 		w.Over("Options")
 		{
 			for _, o := range os {
-				OptionUsage(o)
+				OptionUsage(w, o)
 			}
 		}
 		w.Back("")
@@ -59,27 +63,25 @@ func OptionsUsage(os Options) {
 	w.Back("")
 }
 
-func OptionUsage(o *Option) {
+func OptionUsage(w *writer.Writer, o *Option) {
 	long := fmt.Sprintf("--%s", o.Name)
 	b := o.Binding
-	_, flag := b.(OptionFlag)
-	if flag {
+	if b.IsFlag() {
 		long += "["
 	}
 	long += fmt.Sprintf("=<%s>", b.Type())
-	if flag {
+	if b.IsFlag() {
 		long += "]"
 	}
 
 	short := ""
 	if o.Short != "" {
 		short = fmt.Sprintf("-%s", o.Short)
-		if !flag {
+		if !b.IsFlag() {
 			short += fmt.Sprintf("<%s>", b.Type())
 		}
 	}
 
-	w := UsageWriter
 	w.Add("%s", long)
 	if short != "" {
 		w.Add(", %s", short)
@@ -96,11 +98,41 @@ func OptionUsage(o *Option) {
 	w.Back("")
 }
 
-func SubcommandsUsage(cs []Command) {
+func ParamsUsage(w *writer.Writer, ps Params) {
+	if len(ps) == 0 {
+		return
+	}
+	w.Over("")
+	{
+		w.Over("Params")
+		{
+			width := 0
+			for _, p := range ps {
+				if width < len(p.Name) {
+					width = len(p.Name)
+				}
+			}
+			for _, p := range ps {
+				ParamUsage(w, p, width)
+			}
+		}
+		w.Back("")
+	}
+	w.Back("")
+}
+
+func ParamUsage(w *writer.Writer, p *Param, width int) {
+	brief := p.Brief
+	if brief == "" {
+		brief = p.Description
+	}
+	w.End("%-*s %s", width, p.Name, brief)
+}
+
+func SubcommandsUsage(w *writer.Writer, cs []Command) {
 	if len(cs) == 0 {
 		return
 	}
-	w := UsageWriter
 	w.Over("")
 	{
 		w.Over("Sub-commands")
@@ -112,7 +144,7 @@ func SubcommandsUsage(cs []Command) {
 				}
 			}
 			for _, c := range cs {
-				SubcommandUsage(c, width)
+				SubcommandUsage(w, c, width)
 			}
 		}
 		w.Back("")
@@ -120,8 +152,7 @@ func SubcommandsUsage(cs []Command) {
 	w.Back("")
 }
 
-func SubcommandUsage(c Command, width int) {
-	w := UsageWriter
+func SubcommandUsage(w *writer.Writer, c Command, width int) {
 	brief := c.Brief
 	if brief == "" {
 		brief = c.Description

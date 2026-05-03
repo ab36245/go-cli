@@ -7,13 +7,13 @@ import (
 
 type Options []*Option
 
-func (o *Options) Init() {
-	for _, option := range *o {
-		option.Init()
+func (os *Options) Init() {
+	for _, o := range *os {
+		o.Init()
 	}
 }
 
-func (o *Options) Parse(args *[]string) error {
+func (os *Options) Parse(args *[]string) error {
 	for len(*args) > 0 {
 		arg := (*args)[0]
 		if !strings.HasPrefix(arg, "-") {
@@ -25,9 +25,9 @@ func (o *Options) Parse(args *[]string) error {
 		}
 		var err error
 		if strings.HasPrefix(arg, "--") {
-			err = o.parseLong(arg[2:], args)
+			err = os.parseLong(arg[2:], args)
 		} else {
-			err = o.parseShort(arg[1:], args)
+			err = os.parseShort(arg[1:], args)
 		}
 		if err != nil {
 			return err
@@ -36,7 +36,7 @@ func (o *Options) Parse(args *[]string) error {
 	return nil
 }
 
-func (o *Options) parseLong(arg string, args *[]string) error {
+func (os *Options) parseLong(arg string, args *[]string) error {
 	name := arg
 	value := ""
 	reset := false
@@ -47,7 +47,7 @@ func (o *Options) parseLong(arg string, args *[]string) error {
 		name = arg[:pos]
 		value = arg[pos+1:]
 	}
-	for _, o := range *o {
+	for _, o := range *os {
 		if o.Name != name {
 			continue
 		}
@@ -57,14 +57,10 @@ func (o *Options) parseLong(arg string, args *[]string) error {
 			b.Reset()
 		} else if value != "" {
 			err = b.Assign(value)
-		} else if f, ok := b.(OptionFlag); ok {
-			f.Update()
-		} else if len(*args) > 0 {
-			value = (*args)[0]
-			*args = (*args)[1:]
-			err = b.Assign(value)
+		} else if b.IsFlag() {
+			b.Update()
 		} else {
-			err = fmt.Errorf("requires a value")
+			err = b.Consume(args, 1, 1)
 		}
 		if err != nil {
 			return fmt.Errorf("--%s: %w", name, err)
@@ -74,29 +70,25 @@ func (o *Options) parseLong(arg string, args *[]string) error {
 	return fmt.Errorf("--%s: unknown option", arg)
 }
 
-func (o *Options) parseShort(arg string, args *[]string) error {
+func (os *Options) parseShort(arg string, args *[]string) error {
 	for arg != "" {
 		short := arg[0:1]
 		arg = arg[1:]
 
-		for _, option := range *o {
+		for _, option := range *os {
 			if option.Short != short {
 				continue
 			}
 			b := option.Binding
 			var err error
-			if f, ok := b.(OptionFlag); ok {
-				f.Update()
+			if b.IsFlag() {
+				b.Update()
 			} else if arg != "" {
 				value := arg
 				arg = ""
 				err = b.Assign(value)
-			} else if len(*args) > 0 {
-				value := (*args)[0]
-				*args = (*args)[1:]
-				err = b.Assign(value)
 			} else {
-				err = fmt.Errorf("requires a value")
+				err = b.Consume(args, 1, 1)
 			}
 			if err != nil {
 				return fmt.Errorf("-%s: %w", short, err)
